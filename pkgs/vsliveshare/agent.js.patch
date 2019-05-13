@@ -1,0 +1,12 @@
+--- a/out/src/agent.js
++++ b/out/src/agent.js
+@@ -140,6 +140,9 @@
+                         startEvent.addProperty(telemetryStrings_1.TelemetryPropertyNames.AGENT_START_RESOLVED_STATE, resolved.toString());
+                     }
+                     if (!resolved && traceSource_1.TraceFormat.parseEventId(line) === traceSource_1.TraceEventIds.RpcListeningOnPipe) {
++                        // FIXME: Remove when an actual solution is provided for disabling the diagnostic logging in VSLS Agent.
++                        // Workaround to prevent VSLS Agent from spamming the journal.
++                        child_process.execFile(path.join(Agent.agentBinariesPath, 'gdb-disable-log.sh'), [Agent.cp.pid]);
+                         resolved = true;
+                         Agent.completeAgentStart(true);
+                         // The agent doesn't really start listening until immediately after
