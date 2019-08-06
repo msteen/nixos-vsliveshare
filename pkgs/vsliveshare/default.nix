@@ -39,8 +39,8 @@ in (vscode-utils'.buildVscodeMarketplaceExtension {
   mktplcRef = {
     name = "vsliveshare";
     publisher = "ms-vsliveshare";
-    version = "1.0.67";
-    sha256 = "1shy9xaqz1wsyzzz5z8g409ma5h5kaic0y7bc1q2nxy60gbq828n";
+    version = "1.0.614";
+    sha256 = "1lmpp18l6y2bkrvzra6x0wd100wyc6lwxk2ki84my9ig00z32a6w";
   };
 }).overrideAttrs(attrs: {
   prePatch = ''

@@ -1,46 +1,6 @@
 --- a/out/prod/extension-prod.js
 +++ b/out/prod/extension-prod.js
-@@ -96835,15 +96835,7 @@ async function agentStartupAsync(trace, deactivate, statusBarController) {
-         activationAgentEvent.end(TelemetryResult_1.TelemetryResult.Success, 'Agent activation success.');
-     }
-     catch (e) {
--        let errorMessage;
--        if (await downloader_1.isInstallCorrupt(trace)) {
--            errorMessage = 'An update or installation of VS Live Share failed due to a corrupted download. ' +
--                'Please uninstall and reinstall the extension to resolve. ' +
--                'See https://aka.ms/vsls-corrupted-install for more details.';
--        }
--        else {
--            errorMessage = e.message;
--        }
-+        const errorMessage = e.message;
-         const telemetryMessage = 'Agent activation failed. ' + errorMessage;
-         activationAgentEvent.end(TelemetryResult_1.TelemetryResult.Failure, telemetryMessage);
-         extensionTelemetry_1.ExtensionTelemetry.sendActivateAgentAsyncFault(FaultType_1.FaultType.Error, telemetryMessage, e, activationAgentEvent);
-@@ -112591,20 +112583,13 @@ async function activateInternal(context, activationEvent, isJoin) {
-     }
-     activationEvent.markTime(telemetryStrings_1.TelemetryPropertyNames.EXTENSION_ACTIVATION_COMPAT_CHECK_COMPLETE);
-     const liveShareExtension = vscode.extensions.getExtension('ms-vsliveshare.vsliveshare');
--    const installationResult = await downloader_1.ExternalDownloader.ensureRuntimeDependenciesAsync(liveShareExtension, activationEvent);
--    const isExtensionUpdated = abTestsUtil_1.isExtensionBeingUpdated();
-+    const isExtensionUpdated = true;
-     activationEvent.addProperty(telemetryStrings_1.TelemetryPropertyNames.IS_EXTENSION_BEING_UPDATED, isExtensionUpdated);
-     const isExtensionPackCandidatePresent = extensionUtil_1.ExtensionUtil.isExtensionPackCandidatePresent();
-     activationEvent.addProperty(telemetryStrings_1.TelemetryPropertyNames.IS_EXTENSION_PACK_CANDIDATE_PRESENT, isExtensionPackCandidatePresent);
-     const isFirstExtensionRun = (installationResult === downloader_1.EnsureRuntimeDependenciesResult.Success) && !isExtensionUpdated && isFirstActivation;
-     activationEvent.addProperty(telemetryStrings_1.TelemetryPropertyNames.IS_FIRST_EXTENSION_RUN, isFirstExtensionRun);
--    // failed to install dependencies
--    if (installationResult === downloader_1.EnsureRuntimeDependenciesResult.Failure) {
--        activationEvent.end(TelemetryResult_1.TelemetryResult.UserFailure, 'Extension activation failed - download runtime dependencies.');
--        vscode.window.showErrorMessage(`${config.get(config.Key.name)} was unable to download needed dependencies to finish installation. Ensure you have network connectivity and restart VS Code to retry.`);
--        return;
--    }
--    else if (isFirstExtensionRun) {
-+    if (isFirstExtensionRun) {
-         activationEvent.addProperty(telemetryStrings_1.TelemetryPropertyNames.FIRST_LIVESHARE_ACTIVATION, true);
-         // Show the welcome notification on the first installation
-         const isSelected = (process.env.VSLS_TEST_NORANDOM ? false : Math.random() <= 0.5);
-@@ -112622,7 +112607,6 @@ async function activateInternal(context, activationEvent, isJoin) {
+@@ -130174,7 +130160,6 @@
          }
      }
      abTester_1.abTester.init(isFirstExtensionRun);
