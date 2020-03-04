@@ -1,7 +1,7 @@
 # Baseed on previous attempts of others: https://github.com/NixOS/nixpkgs/issues/41189
-{ lib, vscode-utils, autoPatchelfHook, bash, dos2unix, file, makeWrapper, dotnet-sdk
+{ lib, vscode-utils, gccStdenv, autoPatchelfHook, bash, dos2unix, file, makeWrapper, dotnet-sdk
 , curl, gcc, icu, libkrb5, libsecret, libunwind, libX11, lttng-ust, openssl, utillinux, zlib
-, enableDiagnosticsWorkaround ? false, gccStdenv
+, version, sha256
 }:
 
 with lib;
@@ -31,52 +31,47 @@ let
     utillinux # libuuid
   ];
 
-  vscode-utils' = if enableDiagnosticsWorkaround
-    then vscode-utils.override { stdenv = gccStdenv; }
-    else vscode-utils;
-
-in (vscode-utils'.buildVscodeMarketplaceExtension {
+in ((vscode-utils.override { stdenv = gccStdenv; }).buildVscodeMarketplaceExtension {
   mktplcRef = {
     name = "vsliveshare";
     publisher = "ms-vsliveshare";
-    version = "1.0.614";
-    sha256 = "1lmpp18l6y2bkrvzra6x0wd100wyc6lwxk2ki84my9ig00z32a6w";
+    inherit version sha256;
   };
 }).overrideAttrs(attrs: {
-  prePatch = ''
-    dos2unix out/prod/extension-prod.js
+  buildInputs = attrs.buildInputs ++ libs ++ [ autoPatchelfHook bash file makeWrapper ];
+
+  # Using a patch file won't work, because the file changes too often, causing the patch to fail on most updates.
+  # Rather than patching the calls to functions, we modify the functions to return what we want,
+  # which is less likely to break in the future.
+  postPatch = ''
+    sed -i \
+      -e 's/installFileExistsAsync() {/& return Promise.resolve(true);/' \
+      -e 's/updateExecutablePermissionsAsync() {/& return;/' \
+      -e 's/isInstallCorrupt(traceSource, manifest) {/& return false;/' \
+      out/prod/extension-prod.js
   '';
 
-  patches = [ ./extension-prod.js.patch ];
-
-  buildInputs = attrs.buildInputs ++ libs ++ [ autoPatchelfHook bash dos2unix file makeWrapper ];
-
+  # Support for the `postInstall` hook was added only in nixos-20.03,
+  # so for backwards compatibility reasons lets not use it yet.
   installPhase = attrs.installPhase + ''
-    runHook postInstall
-  '';
-
-  postInstall = ''
     bash -s <<ENDSUBSHELL
     shopt -s extglob
     cd $out/share/vscode/extensions/ms-vsliveshare.vsliveshare
 
     # A workaround to prevent the journal filling up due to diagnostic logging.
-    ${optionalString enableDiagnosticsWorkaround ''
-      gcc -fPIC -shared -ldl -o dotnet_modules/noop-syslog.so ${./noop-syslog.c}
-    ''}
+    # See: https://github.com/MicrosoftDocs/live-share/issues/1272
+    gcc -fPIC -shared -ldl -o dotnet_modules/noop-syslog.so ${./noop-syslog.c}
 
     # Normally the copying of the right executables and libraries is done externally at a later time,
     # but we want it done at installation time.
     # FIXME: Surely there is a better way than copying over the shared .NET libraries.
     cp \
       ${dotnet-sdk}/shared/Microsoft.NETCore.App/*/* \
-      dotnet_modules/runtimes/linux-x64/!(native) \
-      dotnet_modules/runtimes/linux-x64/native/* \
-      dotnet_modules/runtimes/unix/lib/netstandard1.3/* \
+      dotnet_modules/exes/linux-x64/* \
       dotnet_modules
 
-    # Those we need are already copied over, the rest is just a waste of space.
-    rm -r dotnet_modules/runtimes
+    # The other runtimes won't be used and thus are just a waste of space.
+    rm -r dotnet_modules/runtimes/!(linux-x64)
 
     # Not all executables and libraries are executable, so make sure that they are.
     find . -type f ! -executable -exec file {} + | grep -w ELF | cut -d ':' -f1 | tr '\n' '\0' | xargs -0r -n1 chmod +x
@@ -98,14 +93,13 @@ in (vscode-utils'.buildVscodeMarketplaceExtension {
     # which breaks our workaround that makes the extension directory writable.
     mv $root/dotnet_modules/vsls-agent{,-wrapped}
     makeWrapper $root/dotnet_modules/vsls-agent{-wrapped,} \
-      --prefix LD_LIBRARY_PATH : "$rpath" ${optionalString enableDiagnosticsWorkaround ''\
+      --prefix LD_LIBRARY_PATH : "$rpath" \
       --set LD_PRELOAD "$root/dotnet_modules/noop-syslog.so"
-    ''}
   '';
 
   meta = {
     description = "Live Share lets you achieve greater confidence at speed by streamlining collaborative editing, debugging, and more in real-time during development";
-    homepage = https://aka.ms/vsls-docs;
+    homepage = "https://aka.ms/vsls-docs";
     license = licenses.unfree;
     maintainers = with maintainers; [ msteen ];
     platforms = [ "x86_64-linux" ];
