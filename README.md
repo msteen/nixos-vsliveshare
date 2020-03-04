@@ -17,16 +17,32 @@ Experimental support for Live Share in Visual Studio Code for NixOS. The need to
 }
 ```
 
+### Home Manager
+
+```nix
+{
+  imports = [
+    "${builtins.fetchGit {
+      url = "https://github.com/msteen/nixos-vsliveshare.git";
+      ref = "refs/heads/master";
+    }}/modules/vsliveshare/home.nix"
+  ];
+
+  services.vsliveshare.enable = true;
+}
+```
+
 ## Usage
 
 You can manually run `fix-vsliveshare` to fix the current extension within ~/.vscode/extensions (i.e. when installed through vscode's extension management). Or you can have this done automatically whenever a new version is installed with `systemctl --user enable auto-fix-vsliveshare && systemctl --user start auto-fix-vsliveshare`. In both cases you will have to reload the VS Code window to get the fixed Live Share to load. In the case of the auto fixer, note that if you reload too fast (e.g. immediately after the Live Share extension is installed through VS Code's extension manager) then the fix might not have enough time to fully build, so either give it a few seconds or if you were to fast, simply reload the window yet again.
 
-It is also possible to install an older version again, if for some reason a later version breaks, by passing the version (e.g. `fix-vsliveshare 1.0.614`) or the extension directory name (e.g. `fix-vsliveshare ms-vsliveshare.vsliveshare-1.0.1653`).
+### Older versions
+
+At some point the package is likely to break again due to changes made to the extension that break the way it is packaged in NixOS
+There will be an update that causes the current package to fail to build for that version, e.g. due to structural changes made to the extension. In that case please create an issue here and in the meantime you can [downgrade the Live Share extension](https://github.com/microsoft/vscode/issues/30579#issuecomment-456028574), which will pin the extension that particular version regardless of future updates. Then we can run the fixer by passing it the older version (e.g. `fix-vsliveshare 1.0.1653`) or the older extension directory name (e.g. `fix-vsliveshare ms-vsliveshare.vsliveshare-1.0.1653`).
 
 ## Limitations
 
-* The auto fixer is very experimental, I tested it once with an old version of Live Share present (i.e. an actual update) and the rest of the time through fresh installs, so the might still be some remaining bugs in the mechanism.
-
 * The things that need patching in the extension's source code so far have been almost consistent, but the structure of the package itself has changed over the versions (e.g. `extension.js -> extension-prod.js`), so these kind of changes might cause the fix to fail for later versions.
 
-* I have only tested this under `nixos-20.03`.
+* The package requires SDK 3 which is only available in `nixos-20.03` and up.

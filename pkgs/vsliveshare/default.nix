@@ -1,5 +1,5 @@
 # Baseed on previous attempts of others: https://github.com/NixOS/nixpkgs/issues/41189
-{ lib, vscode-utils, gccStdenv, autoPatchelfHook, bash, dos2unix, file, makeWrapper, dotnet-sdk
+{ lib, vscode-utils, gccStdenv, autoPatchelfHook, bash, dos2unix, file, makeWrapper, dotnet-sdk_3
 , curl, gcc, icu, libkrb5, libsecret, libunwind, libX11, lttng-ust, openssl, utillinux, zlib
 , version, sha256
 }:
@@ -45,7 +45,6 @@ in ((vscode-utils.override { stdenv = gccStdenv; }).buildVscodeMarketplaceExtens
   # which is less likely to break in the future.
   postPatch = ''
     sed -i \
-      -e 's/installFileExistsAsync() {/& return Promise.resolve(true);/' \
       -e 's/updateExecutablePermissionsAsync() {/& return;/' \
       -e 's/isInstallCorrupt(traceSource, manifest) {/& return false;/' \
       out/prod/extension-prod.js
@@ -58,17 +57,13 @@ in ((vscode-utils.override { stdenv = gccStdenv; }).buildVscodeMarketplaceExtens
     shopt -s extglob
     cd $out/share/vscode/extensions/ms-vsliveshare.vsliveshare
 
+    # FIXME: I think the noop-syslog.so workaround fails due to no longer using a locally copied SDK.
     # A workaround to prevent the journal filling up due to diagnostic logging.
     # See: https://github.com/MicrosoftDocs/live-share/issues/1272
-    gcc -fPIC -shared -ldl -o dotnet_modules/noop-syslog.so ${./noop-syslog.c}
 
-    # Normally the copying of the right executables and libraries is done externally at a later time,
+    # Normally the copying of the right executables is done externally at a later time,
     # but we want it done at installation time.
-    # FIXME: Surely there is a better way than copying over the shared .NET libraries.
-    cp \
-      ${dotnet-sdk}/shared/Microsoft.NETCore.App/*/* \
-      dotnet_modules/exes/linux-x64/* \
-      dotnet_modules
+    cp dotnet_modules/exes/linux-x64/* dotnet_modules
 
     # The other runtimes won't be used and thus are just a waste of space.
     rm -r dotnet_modules/runtimes/!(linux-x64)
@@ -94,7 +89,7 @@ in ((vscode-utils.override { stdenv = gccStdenv; }).buildVscodeMarketplaceExtens
     mv $root/dotnet_modules/vsls-agent{,-wrapped}
     makeWrapper $root/dotnet_modules/vsls-agent{-wrapped,} \
       --prefix LD_LIBRARY_PATH : "$rpath" \
-      --set LD_PRELOAD "$root/dotnet_modules/noop-syslog.so"
+      --set DOTNET_ROOT ${dotnet-sdk_3}
   '';
 
   meta = {

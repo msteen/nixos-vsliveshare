@@ -1,5 +1,1 @@
-{
-  imports = [
-    ./modules/vsliveshare.nix
-  ];
-}
+import ./modules/vsliveshare
