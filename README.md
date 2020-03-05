@@ -38,7 +38,6 @@ You can manually run `fix-vsliveshare` to fix the current extension within ~/.vs
 
 ### Older versions
 
-At some point the package is likely to break again due to changes made to the extension that break the way it is packaged in NixOS
 There will be an update that causes the current package to fail to build for that version, e.g. due to structural changes made to the extension. In that case please create an issue here and in the meantime you can [downgrade the Live Share extension](https://github.com/microsoft/vscode/issues/30579#issuecomment-456028574), which will pin the extension that particular version regardless of future updates. Then we can run the fixer by passing it the older version (e.g. `fix-vsliveshare 1.0.1653`) or the older extension directory name (e.g. `fix-vsliveshare ms-vsliveshare.vsliveshare-1.0.1653`).
 
 ## Limitations
