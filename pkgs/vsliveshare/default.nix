@@ -1,5 +1,5 @@
 # Baseed on previous attempts of others: https://github.com/NixOS/nixpkgs/issues/41189
-{ lib, vscode-utils, gccStdenv, autoPatchelfHook, bash, dos2unix, file, makeWrapper, dotnet-sdk_3
+{ lib, runCommandCC, vscode-utils, autoPatchelfHook, bash, dos2unix, file, makeWrapper, dotnet-sdk_3
 , curl, gcc, icu, libkrb5, libsecret, libunwind, libX11, lttng-ust, openssl, utillinux, zlib
 , version, sha256
 }:
@@ -31,7 +31,26 @@ let
     utillinux # libuuid
   ];
 
-in ((vscode-utils.override { stdenv = gccStdenv; }).buildVscodeMarketplaceExtension {
+  dotnetRoot = runCommandCC "dotnet-root" { buildInputs = [ makeWrapper ]; } ''
+    shopt -s extglob
+
+    mkdir $out
+
+    # A workaround to prevent the journal filling up due to diagnostic logging.
+    # See: https://github.com/MicrosoftDocs/live-share/issues/1272
+    # See: https://unix.stackexchange.com/questions/481799/how-to-prevent-a-process-from-writing-to-the-systemd-journal
+    gcc -fPIC -shared -ldl -o $out/noop-syslog.so <<'EOF'
+    void syslog(int priority, const char *format, ...) { }
+    EOF
+
+    ln -st $out ${dotnet-sdk_3}/!(dotnet)
+
+    cp ${dotnet-sdk_3}/dotnet $out/dotnet-wrapped
+    makeWrapper $out/dotnet{-wrapped,} \
+      --set LD_PRELOAD $out/noop-syslog.so
+  '';
+
+in (vscode-utils.buildVscodeMarketplaceExtension {
   mktplcRef = {
     name = "vsliveshare";
     publisher = "ms-vsliveshare";
@@ -57,10 +76,6 @@ in ((vscode-utils.override { stdenv = gccStdenv; }).buildVscodeMarketplaceExtens
     shopt -s extglob
     cd $out/share/vscode/extensions/ms-vsliveshare.vsliveshare
 
-    # FIXME: I think the noop-syslog.so workaround fails due to no longer using a locally copied SDK.
-    # A workaround to prevent the journal filling up due to diagnostic logging.
-    # See: https://github.com/MicrosoftDocs/live-share/issues/1272
-
     # Normally the copying of the right executables is done externally at a later time,
     # but we want it done at installation time.
     cp dotnet_modules/exes/linux-x64/* dotnet_modules
@@ -85,11 +100,11 @@ in ((vscode-utils.override { stdenv = gccStdenv; }).buildVscodeMarketplaceExtens
     root=$out/share/vscode/extensions/ms-vsliveshare.vsliveshare
 
     # We cannot use `wrapProgram`, because it will generate a relative path,
-    # which breaks our workaround that makes the extension directory writable.
+    # which will break when copying over the files.
     mv $root/dotnet_modules/vsls-agent{,-wrapped}
     makeWrapper $root/dotnet_modules/vsls-agent{-wrapped,} \
       --prefix LD_LIBRARY_PATH : "$rpath" \
-      --set DOTNET_ROOT ${dotnet-sdk_3}
+      --set DOTNET_ROOT ${dotnetRoot}
   '';
 
   meta = {
