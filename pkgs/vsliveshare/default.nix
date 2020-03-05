@@ -1,5 +1,5 @@
 # Baseed on previous attempts of others: https://github.com/NixOS/nixpkgs/issues/41189
-{ lib, runCommandCC, vscode-utils, autoPatchelfHook, bash, dos2unix, file, makeWrapper, dotnet-sdk_3
+{ lib, vscode-utils, autoPatchelfHook, bash, dos2unix, file, makeWrapper, dotnet-sdk_3, python2
 , curl, gcc, icu, libkrb5, libsecret, libunwind, libX11, lttng-ust, openssl, utillinux, zlib
 , version, sha256
 }:
@@ -30,25 +30,6 @@ let
     gcc.cc.lib
     utillinux # libuuid
   ];
-
-  dotnetRoot = runCommandCC "dotnet-root" { buildInputs = [ makeWrapper ]; } ''
-    shopt -s extglob
-
-    mkdir $out
-
-    # A workaround to prevent the journal filling up due to diagnostic logging.
-    # See: https://github.com/MicrosoftDocs/live-share/issues/1272
-    # See: https://unix.stackexchange.com/questions/481799/how-to-prevent-a-process-from-writing-to-the-systemd-journal
-    gcc -fPIC -shared -ldl -o $out/noop-syslog.so <<'EOF'
-    void syslog(int priority, const char *format, ...) { }
-    EOF
-
-    ln -st $out ${dotnet-sdk_3}/!(dotnet)
-
-    cp ${dotnet-sdk_3}/dotnet $out/dotnet-wrapped
-    makeWrapper $out/dotnet{-wrapped,} \
-      --set LD_PRELOAD $out/noop-syslog.so
-  '';
 
 in (vscode-utils.buildVscodeMarketplaceExtension {
   mktplcRef = {
@@ -104,7 +85,13 @@ in (vscode-utils.buildVscodeMarketplaceExtension {
     mv $root/dotnet_modules/vsls-agent{,-wrapped}
     makeWrapper $root/dotnet_modules/vsls-agent{-wrapped,} \
       --prefix LD_LIBRARY_PATH : "$rpath" \
-      --set DOTNET_ROOT ${dotnetRoot}
+      --set DOTNET_ROOT ${dotnet-sdk_3}
+
+    # A workaround to prevent the journal filling up due to diagnostic logging.
+    # See: https://github.com/MicrosoftDocs/live-share/issues/1272
+    # See: https://unix.stackexchange.com/questions/481799/how-to-prevent-a-process-from-writing-to-the-systemd-journal
+    sed -i 's|exec "|exec ${utillinux}/bin/unshare --map-root-user --mount sh -c "${python2}/bin/python ${./vsls-agent-log.py} \& |' \
+      $root/dotnet_modules/vsls-agent
   '';
 
   meta = {

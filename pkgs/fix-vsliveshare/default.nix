@@ -1,5 +1,5 @@
 { writeShellScriptBin, lib, coreutils, findutils, nix-prefetch, nix, file, gnugrep, jq
-, extensionsDir }:
+, extensionsDir, nixpkgsPath }:
 
 writeShellScriptBin "fix-vsliveshare" ''
   PATH=${lib.makeBinPath [ coreutils findutils nix-prefetch nix file gnugrep jq ]}
@@ -15,14 +15,14 @@ writeShellScriptBin "fix-vsliveshare" ''
     exit 1
   fi
 
-  sha256=$(nix-prefetch -q '
-    callPackage ${toString ../vsliveshare} {
+  sha256=$(nix-prefetch -q --file '${nixpkgsPath}' '
+    callPackage ${../vsliveshare} {
       version = "'"$version"'";
       sha256 = "0000000000000000000000000000000000000000000000000000";
     }') &&
   out=$(nix-build --expr '
-    with import <nixpkgs> {};
-    callPackage ${toString ../vsliveshare} {
+    with import ${nixpkgsPath} {};
+    callPackage ${../vsliveshare} {
       version = "'"$version"'";
       sha256 = "'"$sha256"'";
     }') ||
