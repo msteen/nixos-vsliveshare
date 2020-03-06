@@ -20,7 +20,7 @@ writeShellScriptBin "fix-vsliveshare" ''
       version = "'"$version"'";
       sha256 = "0000000000000000000000000000000000000000000000000000";
     }') &&
-  out=$(nix-build --expr '
+  out=$(nix-build --no-out-link --expr '
     with import ${nixpkgsPath} {};
     callPackage ${../vsliveshare} {
       version = "'"$version"'";

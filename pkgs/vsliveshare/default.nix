@@ -1,5 +1,5 @@
 # Baseed on previous attempts of others: https://github.com/NixOS/nixpkgs/issues/41189
-{ lib, vscode-utils, autoPatchelfHook, bash, dos2unix, file, makeWrapper, dotnet-sdk_3, python2
+{ lib, gccStdenv, vscode-utils, autoPatchelfHook, bash, file, makeWrapper, dotnet-sdk_3
 , curl, gcc, icu, libkrb5, libsecret, libunwind, libX11, lttng-ust, openssl, utillinux, zlib
 , version, sha256
 }:
@@ -31,7 +31,7 @@ let
     utillinux # libuuid
   ];
 
-in (vscode-utils.buildVscodeMarketplaceExtension {
+in ((vscode-utils.override { stdenv = gccStdenv; }).buildVscodeMarketplaceExtension {
   mktplcRef = {
     name = "vsliveshare";
     publisher = "ms-vsliveshare";
@@ -57,12 +57,18 @@ in (vscode-utils.buildVscodeMarketplaceExtension {
     shopt -s extglob
     cd $out/share/vscode/extensions/ms-vsliveshare.vsliveshare
 
+    # A workaround to prevent the journal filling up due to diagnostic logging.
+    # See: https://github.com/MicrosoftDocs/live-share/issues/1272
+    # See: https://unix.stackexchange.com/questions/481799/how-to-prevent-a-process-from-writing-to-the-systemd-journal
+    gcc -fPIC -shared -ldl -o dotnet_modules/noop-syslog.so ${./noop-syslog.c}
+
     # Normally the copying of the right executables is done externally at a later time,
     # but we want it done at installation time.
     cp dotnet_modules/exes/linux-x64/* dotnet_modules
 
-    # The other runtimes won't be used and thus are just a waste of space.
-    rm -r dotnet_modules/runtimes/!(linux-x64)
+    # The required executables are already copied over,
+    # and the other runtimes won't be used and thus are just a waste of space.
+    rm -r dotnet_modules/exes dotnet_modules/runtimes/!(linux-x64)
 
     # Not all executables and libraries are executable, so make sure that they are.
     find . -type f ! -executable -exec file {} + | grep -w ELF | cut -d ':' -f1 | tr '\n' '\0' | xargs -0r -n1 chmod +x
@@ -85,13 +91,8 @@ in (vscode-utils.buildVscodeMarketplaceExtension {
     mv $root/dotnet_modules/vsls-agent{,-wrapped}
     makeWrapper $root/dotnet_modules/vsls-agent{-wrapped,} \
       --prefix LD_LIBRARY_PATH : "$rpath" \
-      --set DOTNET_ROOT ${dotnet-sdk_3}
-
-    # A workaround to prevent the journal filling up due to diagnostic logging.
-    # See: https://github.com/MicrosoftDocs/live-share/issues/1272
-    # See: https://unix.stackexchange.com/questions/481799/how-to-prevent-a-process-from-writing-to-the-systemd-journal
-    sed -i 's|exec "|exec ${utillinux}/bin/unshare --map-root-user --mount sh -c "${python2}/bin/python ${./vsls-agent-log.py} \& |' \
-      $root/dotnet_modules/vsls-agent
+      --set DOTNET_ROOT ${dotnet-sdk_3} \
+      --set LD_PRELOAD $root/dotnet_modules/noop-syslog.so
   '';
 
   meta = {
