@@ -1,8 +1,8 @@
-{ writeShellScriptBin, lib, coreutils, findutils, nix-prefetch, nix, file, gnugrep, jq
+{ writeShellScriptBin, lib, coreutils, findutils, nix, file, gnugrep, jq
 , extensionsDir, nixpkgsPath }:
 
 writeShellScriptBin "fix-vsliveshare" ''
-  PATH=${lib.makeBinPath [ coreutils findutils nix-prefetch nix file gnugrep jq ]}
+  PATH=${lib.makeBinPath [ coreutils findutils nix file gnugrep jq ]}
 
   if (( $# >= 1 )); then
     version=$1
@@ -15,17 +15,22 @@ writeShellScriptBin "fix-vsliveshare" ''
     exit 1
   fi
 
-  sha256=$(nix-prefetch -q --file '${nixpkgsPath}' '
-    callPackage ${../vsliveshare} {
-      version = "'"$version"'";
-      sha256 = "0000000000000000000000000000000000000000000000000000";
-    }') &&
-  out=$(nix-build --no-out-link --expr '
-    with import ${nixpkgsPath} {};
-    callPackage ${../vsliveshare} {
-      version = "'"$version"'";
-      sha256 = "'"$sha256"'";
-    }') ||
+  nixpkgs=$(nix-build --no-out-link --expr '
+    (import ${nixpkgsPath} { }).writeText "nixpkgs.nix" '"'''"'
+      import ${nixpkgsPath} {
+        overlays = [
+          (self: super: {
+            vsliveshare = super.callPackage ${../vsliveshare} {
+              version = "'"$version"'";
+              sha256 = "0000000000000000000000000000000000000000000000000000";
+            };
+          })
+        ];
+      }
+    '"'''"'
+  ') &&
+  sha256=$(nix-prefetch-url --type sha256 --unpack "$nixpkgs" -A vsliveshare.src 2>/dev/null) &&
+  out=$(nix-build --no-out-link --expr '(import '"$nixpkgs"').vsliveshare.override { sha256 = "'"$sha256"'"; }') ||
   {
     echo "Failed to build VS Code Live Share version '$version'." >&2
     exit 1

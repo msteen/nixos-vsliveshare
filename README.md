@@ -4,6 +4,8 @@ Experimental support for Live Share in Visual Studio Code for NixOS. The need to
 
 ## Installation
 
+WARNING: The Live Share extension required .NET Core SDK 3, which is not present within the Nixpkgs channel `nixos-19.09`, so if you are not on Nixpkgs channel `nixos-20.03` or up, it will fail to build with `called without required argument 'dotnet-sdk_3'`. To workaround this issue, there is the `nixpkgsPath` option that allows you to specify the path to the Nixpkgs channel that is to be used to build the extension.
+
 ```nix
 {
   imports = [
@@ -36,8 +38,13 @@ Experimental support for Live Share in Visual Studio Code for NixOS. The need to
     }}/modules/vsliveshare/home.nix"
   ];
 
-  # Although not shown, it too has the `nixpkgsPath` and `extensionsDir` options available.
   services.vsliveshare.enable = true;
+  extensionsDir = "$HOME/.vscode-oss/extensions";
+  nixpkgsPath = builtins.fetchGit {
+    url = "https://github.com/NixOS/nixpkgs.git";
+    ref = "refs/heads/nixos-20.03";
+    rev = "61cc1f0dc07c2f786e0acfd07444548486f4153b";
+  };
 }
 ```
 
@@ -51,6 +58,6 @@ There will be an update that causes the current package to fail to build for tha
 
 ## Limitations
 
-* The things that need patching in the extension's source code so far have been almost consistent, but the structure of the package itself has changed over the versions (e.g. `extension.js -> extension-prod.js`), so these kind of changes might cause the fix to fail for later versions.
+* The package requires SDK 3, which is only available in Nixpkgs channel `nixos-20.03` and up.
 
-* The package requires SDK 3 which is only available in `nixos-20.03` and up.
+* The things that need patching in the extension's source code so far have been almost consistent, but the structure of the package itself has changed over the versions (e.g. `extension.js -> extension-prod.js`), so these kind of changes might cause the fix to fail in the future.

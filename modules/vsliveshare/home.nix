@@ -13,7 +13,7 @@ import ./module.nix ({ packages, name, description, script }:
     };
 
     Service = {
-      ExecStart = script;
+      ExecStart = "${script}";
     };
 
     Install = {
