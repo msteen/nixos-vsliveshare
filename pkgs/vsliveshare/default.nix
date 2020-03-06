@@ -71,7 +71,7 @@ in ((vscode-utils.override { stdenv = gccStdenv; }).buildVscodeMarketplaceExtens
     rm -r dotnet_modules/exes dotnet_modules/runtimes/!(linux-x64)
 
     # Not all executables and libraries are executable, so make sure that they are.
-    find . -type f ! -executable -exec file {} + | grep -w ELF | cut -d ':' -f1 | tr '\n' '\0' | xargs -0r -n1 chmod +x
+    find . -type f ! -executable -exec file {} + | grep -w ELF | cut -d ':' -f1 | xargs -rd'\n' chmod +x
 
     # Not all scripts are executed by passing them to a shell, so they need to be executable as well.
     find . -type f -name '*.sh' ! -executable -exec chmod +x {} +
