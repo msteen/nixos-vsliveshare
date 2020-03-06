@@ -22,7 +22,7 @@ in {
     };
 
     nixpkgsPath = mkOption {
-      type = str;
+      type = coercedTo path toString str;
       default = "<nixpkgs>";
       description = ''
         The extension is likely to need the latest dependencies (e.g. nixos-unstable),
