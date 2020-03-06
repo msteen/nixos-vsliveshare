@@ -13,7 +13,15 @@ Experimental support for Live Share in Visual Studio Code for NixOS. The need to
     }}"
   ];
 
-  services.vsliveshare.enable = true;
+  services.vsliveshare = {
+    enable = true;
+    extensionsDir = "$HOME/.vscode-oss/extensions";
+    nixpkgsPath = builtins.fetchGit {
+      url = "https://github.com/NixOS/nixpkgs.git";
+      ref = "refs/heads/nixos-20.03";
+      rev = "61cc1f0dc07c2f786e0acfd07444548486f4153b";
+    };
+  };
 }
 ```
 
@@ -28,6 +36,7 @@ Experimental support for Live Share in Visual Studio Code for NixOS. The need to
     }}/modules/vsliveshare/home.nix"
   ];
 
+  # Although not shown, it too has the `nixpkgsPath` and `extensionsDir` options available.
   services.vsliveshare.enable = true;
 }
 ```
