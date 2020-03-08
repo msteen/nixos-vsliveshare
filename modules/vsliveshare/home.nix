@@ -1,11 +1,11 @@
-import ./module.nix ({ packages, name, description, script }:
+import ./module.nix ({ packages, description, script }:
 
 {
   home = { inherit packages; };
 
   services.gnome-keyring.enable = true;
 
-  systemd.user.services.${name} = {
+  systemd.user.services.auto-fix-vsliveshare = {
     Unit = {
       Description = description;
       After = [ "graphical-session-pre.target" ];
@@ -13,7 +13,7 @@ import ./module.nix ({ packages, name, description, script }:
     };
 
     Service = {
-      ExecStart = "${script}";
+      ExecStart = script;
     };
 
     Install = {
