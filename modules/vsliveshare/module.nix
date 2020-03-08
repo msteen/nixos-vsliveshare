@@ -37,8 +37,31 @@ in {
     name = "auto-fix-vsliveshare";
     description = "Automatically fix the VS Code Live Share extension";
     script = pkgs.writeShellScript "${name}.sh" ''
-      PATH=${makeBinPath (with pkgs; [ coreutils inotify-tools fix-vsliveshare ])}
-      mkdir -p "${cfg.extensionsDir}" &&
+      PATH=${makeBinPath (with pkgs; [ coreutils findutils inotify-tools fix-vsliveshare ])}
+      if [[ -e "${cfg.extensionsDir}" ]]; then
+        # Fix the current extension, if available.
+        while read -rd ''' name; do
+          # There was a previous extension, so there is more than one.
+          if [[ -n $extension ]]; then
+            extension=
+            break
+          fi
+          extension=$name
+        done < <(find "${cfg.extensionsDir}" -mindepth 1 -maxdepth 1 -name 'ms-vsliveshare.vsliveshare-*' -printf '%P\0')
+        # There is at least one extension.
+        if [[ -v extension ]]; then
+          # There is more than one extension.
+          if [[ -z $extension ]]; then
+            fix-vsliveshare
+          # There is one extension, and it is not yet fixed.
+          elif [[ ! -e "${cfg.extensionsDir}/$extension/dotnet_modules/vsls-agent-wrapped" ]]; then
+            fix-vsliveshare "$extension"
+          fi
+        fi
+      else
+        mkdir -p "${cfg.extensionsDir}" || exit
+      fi
+      # Fix future extensions.
       while IFS=: read -r name event; do
         if [[ $event == 'CREATE,ISDIR' && $name == .ms-vsliveshare.vsliveshare-* ]]; then
           extension=''${name:1}
