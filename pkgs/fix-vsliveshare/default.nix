@@ -1,16 +1,16 @@
-{ writeShellScriptBin, lib, coreutils, findutils, nix, file, gnugrep, jq
+{ writeShellScriptBin, lib, coreutils, findutils, nix, git, file, gnugrep, jq
 , extensionsDir, nixpkgsPath }:
 
 writeShellScriptBin "fix-vsliveshare" ''
-  PATH=${lib.makeBinPath [ coreutils findutils nix file gnugrep jq ]}
+  PATH=${lib.makeBinPath [ coreutils findutils nix git file gnugrep jq ]}
 
   if (( $# >= 1 )); then
     version=$1
   else
-    version=$(find "${extensionsDir}" -mindepth 1 -maxdepth 1 -name 'ms-vsliveshare.vsliveshare-*' -printf '%f' | sort -rV | head -n1)
+    version=$(find "${extensionsDir}" -mindepth 1 -maxdepth 1 -name 'ms-vsliveshare.vsliveshare-*' -printf '%f\n' | sort -rV | head -n1)
   fi
   version=''${version/ms-vsliveshare.vsliveshare-/}
-  if [[ ! $version =~ [0-9]+\.[0-9]+\.[0-9]+ ]]; then
+  if [[ ! $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
     echo "Invalid version '$version'." >&2
     exit 1
   fi
