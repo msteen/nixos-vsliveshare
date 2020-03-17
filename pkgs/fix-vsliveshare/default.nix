@@ -36,7 +36,7 @@ writeShellScriptBin "fix-vsliveshare" ''
     exit 1
   }
 
-  src=$out/share/vscode/extensions/ms-vsliveshare.vsliveshare
+  src=$(find $out -name ms-vsliveshare.vsliveshare)
   dst="${extensionsDir}"/ms-vsliveshare.vsliveshare-$version
 
   # Remove all previous versions of VS Code Live Share.

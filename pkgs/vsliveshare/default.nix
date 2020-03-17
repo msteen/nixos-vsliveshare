@@ -53,9 +53,18 @@ in ((vscode-utils.override { stdenv = gccStdenv; }).buildVscodeMarketplaceExtens
   # Support for the `postInstall` hook was added only in nixos-20.03,
   # so for backwards compatibility reasons lets not use it yet.
   installPhase = attrs.installPhase + ''
+    # Support both the new and old directory structure of vscode extensions.
+    if [[ -d $out/ms-vsliveshare.vsliveshare ]]; then
+      cd $out/ms-vsliveshare.vsliveshare
+    elif [[ -d $out/share/vscode/extensions/ms-vsliveshare.vsliveshare ]]; then
+      cd $out/share/vscode/extensions/ms-vsliveshare.vsliveshare
+    else
+      echo "Could not find extension directory 'ms-vsliveshare.vsliveshare'." >&2
+      exit 1
+    fi
+
     bash -s <<ENDSUBSHELL
     shopt -s extglob
-    cd $out/share/vscode/extensions/ms-vsliveshare.vsliveshare
 
     # A workaround to prevent the journal filling up due to diagnostic logging.
     # See: https://github.com/MicrosoftDocs/live-share/issues/1272
@@ -84,15 +93,13 @@ in ((vscode-utils.override { stdenv = gccStdenv; }).buildVscodeMarketplaceExtens
   rpath = makeLibraryPath libs;
 
   postFixup = ''
-    root=$out/share/vscode/extensions/ms-vsliveshare.vsliveshare
-
     # We cannot use `wrapProgram`, because it will generate a relative path,
     # which will break when copying over the files.
-    mv $root/dotnet_modules/vsls-agent{,-wrapped}
-    makeWrapper $root/dotnet_modules/vsls-agent{-wrapped,} \
+    mv dotnet_modules/vsls-agent{,-wrapped}
+    makeWrapper dotnet_modules/vsls-agent{-wrapped,} \
       --prefix LD_LIBRARY_PATH : "$rpath" \
       --set DOTNET_ROOT ${dotnet-sdk_3} \
-      --set LD_PRELOAD $root/dotnet_modules/noop-syslog.so
+      --set LD_PRELOAD $PWD/dotnet_modules/noop-syslog.so
   '';
 
   meta = {
