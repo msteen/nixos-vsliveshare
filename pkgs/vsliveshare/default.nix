@@ -96,7 +96,7 @@ in ((vscode-utils.override { stdenv = gccStdenv; }).buildVscodeMarketplaceExtens
     # We cannot use `wrapProgram`, because it will generate a relative path,
     # which will break when copying over the files.
     mv dotnet_modules/vsls-agent{,-wrapped}
-    makeWrapper dotnet_modules/vsls-agent{-wrapped,} \
+    makeWrapper $PWD/dotnet_modules/vsls-agent{-wrapped,} \
       --prefix LD_LIBRARY_PATH : "$rpath" \
       --set DOTNET_ROOT ${dotnet-sdk_3} \
       --set LD_PRELOAD $PWD/dotnet_modules/noop-syslog.so
