@@ -13,7 +13,7 @@ writeShellScript "auto-fix-vsliveshare.sh" ''
         break
       fi
       extension=$name
-    done < <(find "${extensionsDir}" -mindepth 1 -maxdepth 1 -name 'ms-vsliveshare.vsliveshare-*' -printf '%P\0')
+    done < <(find "${extensionsDir}" -mindepth 1 -maxdepth 1 -name 'ms-vsliveshare.vsliveshare-[0-9]*' -printf '%P\0')
 
     # There is at least one extension.
     if [[ -v extension ]]; then
@@ -31,9 +31,9 @@ writeShellScript "auto-fix-vsliveshare.sh" ''
 
   # Fix future extensions.
   while IFS=: read -r name event; do
-    if [[ $event == 'CREATE,ISDIR' && $name == .ms-vsliveshare.vsliveshare-* ]]; then
+    if [[ $event == 'CREATE,ISDIR' && $name =~ ^.ms-vsliveshare\.vsliveshare-[0-9].*$ ]]; then
       extension=''${name:1}
-    elif [[ $event == 'CLOSE_NOWRITE,CLOSE,ISDIR' && -n $extension && $name == ms-vsliveshare.vsliveshare-* ]]; then
+    elif [[ $event == 'CLOSE_NOWRITE,CLOSE,ISDIR' && -n $extension && $name =~ ^ms-vsliveshare\.vsliveshare-[0-9].*$ ]]; then
       fix-vsliveshare "$extension"
       extension=
     fi

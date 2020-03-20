@@ -7,7 +7,7 @@ writeShellScriptBin "fix-vsliveshare" ''
   if (( $# >= 1 )); then
     version=$1
   else
-    version=$(find "${extensionsDir}" -mindepth 1 -maxdepth 1 -name 'ms-vsliveshare.vsliveshare-*' -printf '%f\n' | sort -rV | head -n1)
+    version=$(find "${extensionsDir}" -mindepth 1 -maxdepth 1 -name 'ms-vsliveshare.vsliveshare-[0-9]*' -printf '%f\n' | sort -rV | head -n1)
   fi
   version=''${version/ms-vsliveshare.vsliveshare-/}
   if [[ ! $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -40,7 +40,7 @@ writeShellScriptBin "fix-vsliveshare" ''
   dst="${extensionsDir}"/ms-vsliveshare.vsliveshare-$version
 
   # Remove all previous versions of VS Code Live Share.
-  find "${extensionsDir}" -mindepth 1 -maxdepth 1 -name 'ms-vsliveshare.vsliveshare-*' -exec rm -r {} +
+  find "${extensionsDir}" -mindepth 1 -maxdepth 1 -name 'ms-vsliveshare.vsliveshare-[0-9]*' -exec rm -r {} +
 
   # Create the extension directory.
   mkdir -p "$dst"
