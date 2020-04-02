@@ -5,7 +5,7 @@ Experimental support for Live Share in Visual Studio Code for NixOS. The need to
 ## Installation
 
 WARNING: The Live Share extension required .NET Core SDK 3, which is not present within the Nixpkgs channel `nixos-19.09`, so if you are not on Nixpkgs channel `nixos-20.03` or up, it will fail to build with `called without required argument 'dotnet-sdk_3'`. To workaround this issue, there is the `nixpkgs` option that allows you to specify the path to the Nixpkgs channel that is to be used to build the extension.
-fetchTarball ""
+
 ```nix
 {
   imports = [
