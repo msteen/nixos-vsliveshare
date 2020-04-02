@@ -1,5 +1,5 @@
 { writeShellScriptBin, lib, coreutils, findutils, nix, git, file, gnugrep, jq
-, extensionsDir, nixpkgsPath }:
+, extensionsDir, nixpkgs }:
 
 writeShellScriptBin "fix-vsliveshare" ''
   PATH=${lib.makeBinPath [ coreutils findutils nix git file gnugrep jq ]}
@@ -16,8 +16,8 @@ writeShellScriptBin "fix-vsliveshare" ''
   fi
 
   nixpkgs=$(nix-build --no-out-link --expr '
-    (import ${nixpkgsPath} { }).writeText "nixpkgs.nix" '"'''"'
-      import ${nixpkgsPath} {
+    (import ${nixpkgs} { }).writeText "nixpkgs.nix" '"'''"'
+      import ${nixpkgs} {
         overlays = [
           (self: super: {
             vsliveshare = super.callPackage ${../vsliveshare} {

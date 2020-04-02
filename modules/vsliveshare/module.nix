@@ -7,10 +7,14 @@ let
   cfg = config.services.vsliveshare;
 
   fix-vsliveshare = pkgs.callPackage ../../pkgs/fix-vsliveshare {
-    inherit (cfg) extensionsDir nixpkgsPath;
+    inherit (cfg) extensionsDir nixpkgs;
   };
 
 in {
+  imports = [
+    (mkRenamedOptionModule [ "services" "vsliveshare" "nixpkgsPath" ] [ "services" "vsliveshare" "nixpkgs" ])
+  ];
+
   options.services.vsliveshare = with types; {
     enable = mkEnableOption "VS Code Live Share extension";
 
@@ -23,7 +27,7 @@ in {
       '';
     };
 
-    nixpkgsPath = mkOption {
+    nixpkgs = mkOption {
       type = coercedTo path toString str;
       default = "<nixpkgs>";
       description = ''
@@ -37,9 +41,11 @@ in {
   config = mkIf cfg.enable (moduleConfig {
     packages = with pkgs; [ bash desktop-file-utils xlibs.xprop fix-vsliveshare ];
     description = "Automatically fix the VS Code Live Share extension";
-    script = "${pkgs.callPackage ../../pkgs/auto-fix-vsliveshare {
-      inherit fix-vsliveshare;
-      inherit (cfg) extensionsDir;
-    }}";
+    serviceConfig = {
+      ExecStart = "${pkgs.callPackage ../../pkgs/auto-fix-vsliveshare {
+        inherit fix-vsliveshare;
+        inherit (cfg) extensionsDir;
+      }}";
+    };
   });
 }

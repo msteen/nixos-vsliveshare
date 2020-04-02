@@ -4,25 +4,18 @@ Experimental support for Live Share in Visual Studio Code for NixOS. The need to
 
 ## Installation
 
-WARNING: The Live Share extension required .NET Core SDK 3, which is not present within the Nixpkgs channel `nixos-19.09`, so if you are not on Nixpkgs channel `nixos-20.03` or up, it will fail to build with `called without required argument 'dotnet-sdk_3'`. To workaround this issue, there is the `nixpkgsPath` option that allows you to specify the path to the Nixpkgs channel that is to be used to build the extension.
-
+WARNING: The Live Share extension required .NET Core SDK 3, which is not present within the Nixpkgs channel `nixos-19.09`, so if you are not on Nixpkgs channel `nixos-20.03` or up, it will fail to build with `called without required argument 'dotnet-sdk_3'`. To workaround this issue, there is the `nixpkgs` option that allows you to specify the path to the Nixpkgs channel that is to be used to build the extension.
+fetchTarball ""
 ```nix
 {
   imports = [
-    "${builtins.fetchGit {
-      url = "https://github.com/msteen/nixos-vsliveshare.git";
-      ref = "refs/heads/master";
-    }}"
+    (fetchTarball "https://github.com/msteen/nixos-vsliveshare/tarball/master")
   ];
 
   services.vsliveshare = {
     enable = true;
     extensionsDir = "$HOME/.vscode-oss/extensions";
-    nixpkgsPath = builtins.fetchGit {
-      url = "https://github.com/NixOS/nixpkgs.git";
-      ref = "refs/heads/nixos-20.03";
-      rev = "61cc1f0dc07c2f786e0acfd07444548486f4153b";
-    };
+    nixpkgs = fetchTarball "https://github.com/NixOS/nixpkgs/tarball/61cc1f0dc07c2f786e0acfd07444548486f4153b";
   };
 }
 ```
@@ -32,20 +25,13 @@ WARNING: The Live Share extension required .NET Core SDK 3, which is not present
 ```nix
 {
   imports = [
-    "${builtins.fetchGit {
-      url = "https://github.com/msteen/nixos-vsliveshare.git";
-      ref = "refs/heads/master";
-    }}/modules/vsliveshare/home.nix"
+    "${fetchTarball "https://github.com/msteen/nixos-vsliveshare/tarball/master"}/modules/vsliveshare/home.nix"
   ];
 
   services.vsliveshare = {
     enable = true;
     extensionsDir = "$HOME/.vscode-oss/extensions";
-    nixpkgsPath = builtins.fetchGit {
-      url = "https://github.com/NixOS/nixpkgs.git";
-      ref = "refs/heads/nixos-20.03";
-      rev = "61cc1f0dc07c2f786e0acfd07444548486f4153b";
-    };
+    nixpkgs = fetchTarball "https://github.com/NixOS/nixpkgs/tarball/61cc1f0dc07c2f786e0acfd07444548486f4153b";
   };
 }
 ```

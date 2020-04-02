@@ -1,4 +1,4 @@
-import ./module.nix ({ packages, description, script }:
+import ./module.nix ({ packages, description, serviceConfig }:
 
 {
   home = { inherit packages; };
@@ -12,9 +12,7 @@ import ./module.nix ({ packages, description, script }:
       PartOf = [ "graphical-session.target" ];
     };
 
-    Service = {
-      ExecStart = script;
-    };
+    Service = serviceConfig;
 
     Install = {
       WantedBy = [ "graphical-session-pre.target" ];

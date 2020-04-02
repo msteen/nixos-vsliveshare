@@ -1,4 +1,4 @@
-import ./module.nix ({ packages, description, script }:
+import ./module.nix ({ packages, description, serviceConfig }:
 
 {
   environment.systemPackages = packages;
@@ -6,10 +6,7 @@ import ./module.nix ({ packages, description, script }:
   services.gnome3.gnome-keyring.enable = true;
 
   systemd.user.services.auto-fix-vsliveshare = {
-    inherit description;
-    serviceConfig = {
-      ExecStart = script;
-    };
+    inherit description serviceConfig;
     wantedBy = [ "graphical-session.target" ];
   };
 })
