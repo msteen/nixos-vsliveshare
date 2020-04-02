@@ -38,11 +38,12 @@ in {
     };
   };
 
-  config = mkIf cfg.enable (moduleConfig {
+  config = mkIf cfg.enable (moduleConfig rec {
+    name = "auto-fix-vsliveshare";
     packages = with pkgs; [ bash desktop-file-utils xlibs.xprop fix-vsliveshare ];
     description = "Automatically fix the VS Code Live Share extension";
     serviceConfig = {
-      ExecStart = "${pkgs.callPackage ../../pkgs/auto-fix-vsliveshare {
+      ExecStart = "${pkgs.callPackage (../../pkgs + "/${name}") {
         inherit fix-vsliveshare;
         inherit (cfg) extensionsDir;
       }}";
