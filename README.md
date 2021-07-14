@@ -1,5 +1,10 @@
 # Live Share support in Visual Studio Code for NixOS
 
+**:warning: DEPRECATED: I am currently not using Live Share myself and there is a better alternative, so I recommend using that instead:**
+```
+vscode-with-extensions.override { vscodeExtensions = with vscode-extensions; [ ms-vsliveshare.vsliveshare ]; }
+```
+
 Experimental support for Live Share in VS Code for NixOS. The need to modify the extension directory in a destructive way and most updates causing the patch files to no longer apply, makes it unsuitable for inclusion in the main Nixpkgs repository, so it is kept in its own repository until a better solution is found.
 
 ## Installation
